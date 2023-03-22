@@ -2,6 +2,8 @@
 
 ## Requisites
 - Golang
+- Redis
+- Docker
 
 
 ## API
