@@ -44,6 +44,11 @@ func (a *App) initializeRoutes() {
 	a.Router.HandleFunc("/{shortlink:[a-zA-Z0-9]{1,11}}", a.redirect).Methods("GET")
 }
 
+// Run starts to listen on server
+func (a *App) Run(addr string) {
+	log.Fatal(http.ListenAndServe(addr, a.Router))
+}
+
 func (a *App) createShortLink(w http.ResponseWriter, r *http.Request) {
 	var req ShortenReq
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -90,15 +95,11 @@ func (a *App) redirect(w http.ResponseWriter, r *http.Request) {
 	// 返回的是字典类型
 	encodeId := vars["shortlink"]
 	url, err := a.Storage.UnShorten(encodeId)
+
 	if err != nil {
 		responseWithError(w, err)
 	} else {
 		http.Redirect(w, r, url, http.StatusTemporaryRedirect)
 	}
 
-}
-
-// Run starts to listen on server
-func (a *App) Run(addr string) {
-	log.Fatal(http.ListenAndServe(addr, a.Router))
 }

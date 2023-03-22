@@ -41,12 +41,14 @@ func NewRedisClient(rc *RedisConf) *RedisClient {
 		panic(err)
 	}
 
+	fmt.Println("redis connected on " + addr)
 	return &RedisClient{client}
 }
 
 func (r *RedisClient) Shorten(url string, expiration int64) (string, error) {
 	urlHash := toSHA1(url)
 
+	// check if the url has been shortened
 	d, err := r.cli.Get(fmt.Sprintf(URLHashKey, urlHash)).Result()
 	if err == redis.Nil {
 		// not existed, nothing to do
@@ -81,7 +83,7 @@ func (r *RedisClient) Shorten(url string, expiration int64) (string, error) {
 		return "", err
 	}
 
-	info, err := json.Marshal(&ShortLinkInfo{
+	detail, err := json.Marshal(&ShortLinkInfo{
 		URL:                 url,
 		ExpirationInMinutes: time.Duration(expiration),
 		CreatedAt:           time.Now().String(),
@@ -91,7 +93,7 @@ func (r *RedisClient) Shorten(url string, expiration int64) (string, error) {
 	}
 
 	// 4. save short link and link detail
-	err = r.cli.Set(fmt.Sprintf(ShortLinkDetailKey, encodeId), info, time.Minute*time.Duration(expiration)).Err()
+	err = r.cli.Set(fmt.Sprintf(ShortLinkDetailKey, encodeId), detail, time.Minute*time.Duration(expiration)).Err()
 	if err != nil {
 		return "", nil
 	}
@@ -108,9 +110,9 @@ func (r *RedisClient) UnShorten(encodeId string) (string, error) {
 		}
 	} else if err != nil {
 		return "", err
+	} else {
+		return url, nil
 	}
-
-	return url, nil
 }
 
 func (r *RedisClient) ShortLinkInfo(encodeId string) (ShortLinkInfo, error) {
