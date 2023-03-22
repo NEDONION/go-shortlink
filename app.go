@@ -12,6 +12,8 @@ import (
 type App struct {
 	Router     *mux.Router
 	Middleware *Middleware
+	Config     *Conf
+	Storage
 }
 
 type ShortenReq struct {
@@ -29,6 +31,8 @@ func (a *App) Initialize() {
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
 	a.Router = mux.NewRouter()
 	a.Middleware = &Middleware{}
+	a.Config = InitConfig()
+	a.Storage = NewRedisClient(a.Config.Redis)
 	a.initializeRoutes()
 }
 
