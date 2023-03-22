@@ -63,21 +63,39 @@ func (a *App) createShortLink(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer r.Body.Close()
-	fmt.Printf("%v\n", req)
+
+	encodeId, err := a.Storage.Shorten(req.URL, req.ExpirationInMinutes)
+	if err != nil {
+		responseWithError(w, err)
+	} else {
+		responseWithJson(w, http.StatusOK, shortLinkResp{ShortLink: encodeId})
+	}
 }
 
 func (a *App) getShortLinkInfo(w http.ResponseWriter, r *http.Request) {
 	vals := r.URL.Query()
-	s := vals.Get("shortlink")
-	fmt.Printf("%s\n", s)
+	encodeId := vals.Get("shortlink")
+
+	info, err := a.Storage.ShortLinkInfo(encodeId)
+	if err != nil {
+		responseWithError(w, err)
+	} else {
+		responseWithJson(w, http.StatusOK, info)
+	}
 }
 
 // redirect to original url
 func (a *App) redirect(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	// 返回的是字典类型
-	s := vars["shortlink"]
-	fmt.Printf("%s\n", s)
+	encodeId := vars["shortlink"]
+	url, err := a.Storage.UnShorten(encodeId)
+	if err != nil {
+		responseWithError(w, err)
+	} else {
+		http.Redirect(w, r, url, http.StatusTemporaryRedirect)
+	}
+
 }
 
 // Run starts to listen on server
